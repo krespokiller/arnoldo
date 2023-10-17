@@ -1,38 +1,68 @@
-import { useState } from 'react';
+import React, { useEffect } from 'react';
+import YouTube from 'react-youtube';
 
-import dynamic from 'next/dynamic';
+const home = () => {
+  useEffect(() => {
+    // Load the YouTube IFrame Player API code asynchronously
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
-import Header from '../components/Header/Header.js';
+    // Ensure the API is loaded before creating the player
+    window.onYouTubeIframeAPIReady = createYouTubePlayer;
 
-import Scene from '../components/Scene/Scene.js';
+    // Cleanup when the component unmounts
+    return () => {
+      window.onYouTubeIframeAPIReady = undefined;
+    };
+  }, []);
 
-import Dinosaur from '../components/Dinosaur/Dinosaur.js';
+  // This function creates a YouTube player when the API code downloads
+  const createYouTubePlayer = () => {
+    new window.YT.Player('player', {
+      height: '390',
+      width: '640',
+      videoId: 'M7lc1UVf-VE',
+      playerVars: {
+        playsinline: 1,
+      },
+      events: {
+        onReady: onPlayerReady,
+        onStateChange: onPlayerStateChange,
+      },
+    });
+  };
 
-import Footer from '../components/Footer/Footer.js';
+  // The API will call this function when the video player is ready
+  const onPlayerReady = (event) => {
+    event.target.playVideo();
+  };
 
-const Home = () => {
-  const [language, setLanguage] = useState('en');
+  // The API calls this function when the player's state changes
+  // The function indicates that when playing a video (state=1),
+  // the player should play for six seconds and then stop.
+  let done = false;
+  const onPlayerStateChange = (event) => {
+    if (event.data === window.YT.PlayerState.PLAYING && !done) {
+      setTimeout(stopVideo, 6000);
+      done = true;
+    }
+  };
 
-  const Resume = dynamic(() => import('../components/Resume/Resume.js'));
+  const stopVideo = (player) => {
+    player.target.stopVideo();
+  };
+
   return (
-    <div className="bg-primary text-white m-4">
-
-      <Header language={language} setLanguage={setLanguage}/>
-
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2">
-
-        <Resume language={language}/>
-
-        <Scene />
-
-      </div>
-
-      <Dinosaur />
-
-      <Footer />
-
+    <div>
+      {/* The <iframe> (and video player) will replace this <div> tag. */}
+      <div id="player"></div>
+      {/* Use the react-youtube component */}
+      {/* Note: This component will be replaced by the YouTube IFrame API */}
+      <YouTube videoId="M7lc1UVf-VE" opts={{ height: '390', width: '640' }} />
     </div>
   );
 };
 
-export default Home;
+export default home;
